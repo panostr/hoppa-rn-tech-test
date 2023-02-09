@@ -1,20 +1,98 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import Forecast from './screens/Forecast';
+import ForecastDetails from './screens/ForecastDetails';
 
-export default function App() {
+
+const HomeStack = createStackNavigator();
+const AppNav = () => (
+  <HomeStack.Navigator
+    initialRouteName={"Forecast"}>
+    <HomeStack.Screen
+      name={"Forecast"}
+      component={Forecast}
+      screenOptions={{ gestureEnabled: false }}
+      options={{
+        headerShown: false,
+        ...TransitionPresets.SlideFromRightIOS
+      }}
+    />
+
+    <HomeStack.Screen
+      name={"ForecastDetails"}
+      component={ForecastDetails}
+      screenOptions={{ gestureEnabled: false }}
+      options={{
+        headerShown: false,
+        ...TransitionPresets.SlideFromRightIOS
+      }}
+    />
+  </HomeStack.Navigator>
+);
+
+
+const App = () => {
+  const ref = useNavigationContainerRef();
+  const routeNameRef = useRef<any>();
+
+  //***** Save the initial route name *****/
+  useEffect(() => {
+    routeNameRef.current = 'App';
+  }, []);
+  //***** Save the initial route name *****/
+
+
+  //***** Deeplinking *****/
+  const linking = {
+    prefixes: ['com.hoppa://'],
+    config: {
+      screens: {
+        Forecast: {
+          path: 'home'
+        },
+        ForecastDetails: {
+          path: 'details'
+        }
+      }
+    }
+  };
+  //***** Deeplinking *****/
+
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+    <NavigationContainer
+      ref={ref}
+      linking={linking}
+      onStateChange={(state) => {
+        const prevScreen = routeNameRef.current;
+        const currentScreen = getActiveRouteName(state);
+        // if (prevScreen !== currentScreen) {
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+        // }
+
+        // Save the current route name for later comparision
+        ref.current = currentScreen;
+      }}>
+      <AppNav />
+    </NavigationContainer>
+  )
+};
+
+//***** Get route name for screen tracking *****/
+const getActiveRouteName = (navigationState: any): string | null => {
+  if (!navigationState) {
+    return null;
+  }
+  const route = navigationState.routes[navigationState.index];
+  // dive into nested navigators
+  if (route.state) {
+    return getActiveRouteName(route.state);
+  }
+  return route.name;
+}
+//***** Get route name for screen tracking *****/
+
+
+
+export default App;
